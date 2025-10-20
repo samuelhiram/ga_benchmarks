@@ -22,7 +22,7 @@
       
     <section>
       <h1>Optimización Paralela con Algoritmo Genético (5 Funciones Benchmark)</h1>
-      <h3>Hilos + GA Real-Coded | Python</h3>
+      <h3>Hilos por función (Modelo de Islas) + GA Real-Coded | Python</h3>
       <p><strong>Autor:</strong> Equipo / Estudiante</p>
       <p><strong>Fecha:</strong> 2025-10-20</p>
     </section>
@@ -52,7 +52,8 @@
   "mutation_sigma_ratio": 0.1,
   "tournament_k": 3,
   "elite_size": 2,
-  "stagnation_patience": 60
+  "stagnation_patience": 60,
+  "islands": 5
 }</pre>
     </section>
     
@@ -94,8 +95,8 @@
   "stagnation_patience": 60
 }</pre>
           </details>
-          <p><strong>Mejor f(x):</strong> 0.00135947</p>
-          <p><strong>Mejor x encontrado:</strong> [-7.7e-05, 0.000472]</p>
+          <p><strong>Mejor f(x):</strong> 7.6783e-13</p>
+          <p><strong>Mejor x encontrado:</strong> [0.0, -0.0]</p>
         </article>
         
         <article>
@@ -133,8 +134,8 @@
   "stagnation_patience": 60
 }</pre>
           </details>
-          <p><strong>Mejor f(x):</strong> 1.65667e-12</p>
-          <p><strong>Mejor x encontrado:</strong> [-1e-06, 2e-06]</p>
+          <p><strong>Mejor f(x):</strong> 6.59472e-14</p>
+          <p><strong>Mejor x encontrado:</strong> [-0.0, -0.0]</p>
         </article>
         
         <article>
@@ -172,8 +173,8 @@
   "stagnation_patience": 60
 }</pre>
           </details>
-          <p><strong>Mejor f(x):</strong> 2.0894e-05</p>
-          <p><strong>Mejor x encontrado:</strong> [-0.000325, 0.0]</p>
+          <p><strong>Mejor f(x):</strong> 5.57776e-13</p>
+          <p><strong>Mejor x encontrado:</strong> [-0.0, -0.0]</p>
         </article>
         
         <article>
@@ -211,8 +212,8 @@
   "stagnation_patience": 60
 }</pre>
           </details>
-          <p><strong>Mejor f(x):</strong> 0.0420658</p>
-          <p><strong>Mejor x encontrado:</strong> [0.795463, 0.631243]</p>
+          <p><strong>Mejor f(x):</strong> 0.000324405</p>
+          <p><strong>Mejor x encontrado:</strong> [0.982012, 0.964256]</p>
         </article>
         
         <article>
@@ -250,8 +251,8 @@
   "stagnation_patience": 60
 }</pre>
           </details>
-          <p><strong>Mejor f(x):</strong> 8.7398e-08</p>
-          <p><strong>Mejor x encontrado:</strong> [-0.000166, -0.000245]</p>
+          <p><strong>Mejor f(x):</strong> 3.84263e-15</p>
+          <p><strong>Mejor x encontrado:</strong> [0.0, -0.0]</p>
         </article>
         
     </section>
@@ -272,9 +273,9 @@
           <td>2</td>
           <td>[-5.0, 5.0]</td>
           <td>80</td>
-          <td>80</td>
-          <td>0.00135947</td>
-          <td>[-7.7e-05, 0.000472]</td>
+          <td>108</td>
+          <td>7.6783e-13</td>
+          <td>[0.0, -0.0]</td>
         </tr>
         
         <tr>
@@ -282,9 +283,9 @@
           <td>2</td>
           <td>[-6.0, 6.0]</td>
           <td>80</td>
-          <td>85</td>
-          <td>1.65667e-12</td>
-          <td>[-1e-06, 2e-06]</td>
+          <td>192</td>
+          <td>6.59472e-14</td>
+          <td>[-0.0, -0.0]</td>
         </tr>
         
         <tr>
@@ -292,9 +293,9 @@
           <td>2</td>
           <td>[-5.12, 5.12]</td>
           <td>80</td>
-          <td>128</td>
-          <td>2.0894e-05</td>
-          <td>[-0.000325, 0.0]</td>
+          <td>87</td>
+          <td>5.57776e-13</td>
+          <td>[-0.0, -0.0]</td>
         </tr>
         
         <tr>
@@ -302,9 +303,9 @@
           <td>2</td>
           <td>[-2.0, 2.0]</td>
           <td>80</td>
-          <td>200</td>
-          <td>0.0420658</td>
-          <td>[0.795463, 0.631243]</td>
+          <td>148</td>
+          <td>0.000324405</td>
+          <td>[0.982012, 0.964256]</td>
         </tr>
         
         <tr>
@@ -312,9 +313,9 @@
           <td>2</td>
           <td>[-5.12, 5.12]</td>
           <td>80</td>
-          <td>101</td>
-          <td>8.7398e-08</td>
-          <td>[-0.000166, -0.000245]</td>
+          <td>82</td>
+          <td>3.84263e-15</td>
+          <td>[0.0, -0.0]</td>
         </tr>
         
         </tbody>

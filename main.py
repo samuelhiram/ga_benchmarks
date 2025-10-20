@@ -2,22 +2,23 @@
 # -*- coding: utf-8 -*-
 """
 Genetic Algorithm (GA) benchmark runner
-- Optimiza 5 funciones de prueba en paralelo usando hilos (ThreadPoolExecutor).
+- Optimiza 5 funciones de prueba usando un modelo de ISLAS:
+  Para CADA función se lanzan N hilos (islas) en paralelo; se toma el mejor.
 - Genera gráficos de superficies (2D) y convergencia.
 - Construye una presentación HTML con Portada, Índice, Introducción, Desarrollo, Resultados, Conclusiones y Referencias.
+
 Requisitos:
   - Python 3.9+
-  - numpy, matplotlib (comúnmente preinstalados en entornos científicos)
+  - numpy, matplotlib
 Uso:
   python3 main.py
-El código es autodocumentado y fácil de modificar.
 """
+
 import os, math, time, json, random, textwrap
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")  # para entornos sin GUI
 import matplotlib.pyplot as plt
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, asdict
 
 # -----------------------------
@@ -31,36 +32,42 @@ class GAParams:
     population: int = 80
     generations: int = 200
     crossover_rate: float = 0.9
-    mutation_rate: float = 0.1       # prob por gen
+    mutation_rate: float = 0.1        # prob por gen
     mutation_sigma_ratio: float = 0.1 # % del rango
     tournament_k: int = 3
     elite_size: int = 2
     stagnation_patience: int = 60     # termina si no mejora tras N generaciones
+    islands: int = 5                  # <-- N hilos por función (ISLAS)
 
+# Semillas globales (no usadas dentro de las islas; solo por compat.)
 random.seed(GAParams.seed)
 np.random.seed(GAParams.seed)
 
-def tournament_select(pop, fitness, k):
+# ====== Operadores con RNG LOCAL (para reproducibilidad en paralelo) ======
+
+def tournament_select_rng(pop, fitness, k, rng):
     n = len(pop)
-    idxs = np.random.randint(0, n, size=k)
+    idxs = rng.integers(0, n, size=k)
     best_i = idxs[np.argmin(fitness[idxs])]
     return pop[best_i]
 
-def arithmetic_crossover(p1, p2):
-    """ Cruce aritmético (dos hijos). """
-    alpha = np.random.rand(*p1.shape)
+def arithmetic_crossover_rng(p1, p2, rng):
+    """ Cruce aritmético (dos hijos) usando RNG local. """
+    alpha = rng.random(p1.shape)
     c1 = alpha * p1 + (1 - alpha) * p2
     c2 = alpha * p2 + (1 - alpha) * p1
     return c1, c2
 
-def gaussian_mutation(x, low, high, pm, sigma):
-    mask = np.random.rand(*x.shape) < pm
-    noise = np.random.normal(loc=0.0, scale=sigma, size=x.shape)
+def gaussian_mutation_rng(x, low, high, pm, sigma, rng):
+    mask  = rng.random(x.shape) < pm
+    noise = rng.normal(0.0, sigma, size=x.shape)
     y = np.where(mask, x + noise, x)
     return np.clip(y, low, high)
 
-def initialize_population(pop_size, dims, low, high):
-    return np.random.uniform(low, high, size=(pop_size, dims))
+def initialize_population_rng(pop_size, dims, low, high, rng):
+    return rng.uniform(low, high, size=(pop_size, dims))
+
+# ====== Benchmarks ======
 
 def sphere(x):
     return np.sum(x**2, axis=-1)
@@ -80,7 +87,6 @@ def ackley(x):
 def griewank(x):
     d = x.shape[-1]
     sum_part = np.sum(x**2, axis=-1)/4000.0
-    # product part:
     i = np.arange(1, d+1)
     cos_part = np.prod(np.cos(x / np.sqrt(i)), axis=-1)
     return sum_part - cos_part + 1
@@ -129,7 +135,6 @@ def ensure_dirs(base):
     return out_dir
 
 def plot_surface_2d(func_name, f, low, high, out_path):
-    # Malla para superficie 3D (dims=2)
     x = np.linspace(low, high, 150)
     y = np.linspace(low, high, 150)
     X, Y = np.meshgrid(x, y)
@@ -139,9 +144,7 @@ def plot_surface_2d(func_name, f, low, high, out_path):
     ax = fig.add_subplot(111, projection="3d")
     ax.plot_surface(X, Y, Z, linewidth=0, antialiased=True)
     ax.set_title(f"{func_name} (superficie 2D)")
-    ax.set_xlabel("x1")
-    ax.set_ylabel("x2")
-    ax.set_zlabel("f(x)")
+    ax.set_xlabel("x1"); ax.set_ylabel("x2"); ax.set_zlabel("f(x)")
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)
     plt.close(fig)
@@ -158,40 +161,43 @@ def plot_convergence(func_name, best_history, out_path):
     fig.savefig(out_path, dpi=150)
     plt.close(fig)
 
-def run_ga_on_function(name, params: GAParams, base_out):
+# =======================
+#  GA: una ISLA (1 hilo)
+# =======================
+def run_ga_island(name, params: GAParams, seed_seq):
+    """ Ejecuta un GA independiente (una 'isla') y retorna su mejor trayectoria. """
+    rng = np.random.default_rng(seed_seq)
     f = FUNC_INFO[name]["f"]
     low, high = FUNC_INFO[name]["bounds"]
     dims = params.dims
-    rng = high - low
-    sigma = params.mutation_sigma_ratio * rng
+    sigma = params.mutation_sigma_ratio * (high - low)
 
     # Inicialización
-    pop = initialize_population(params.population, dims, low, high)
+    pop = initialize_population_rng(params.population, dims, low, high, rng)
     fitness = f(pop)
-    best_idx = np.argmin(fitness)
+    best_idx = int(np.argmin(fitness))
     best = pop[best_idx].copy()
-    best_fit = fitness[best_idx]
-    best_history = [float(best_fit)]
-    best_time = time.time()
+    best_fit = float(fitness[best_idx])
+    best_history = [best_fit]
     stagnation = 0
 
     for gen in range(1, params.generations+1):
         new_pop = []
-        # Elitismo: guardar mejores
+        # Elitismo
         elite_idx = np.argsort(fitness)[:params.elite_size]
         elites = pop[elite_idx]
 
         while len(new_pop) < params.population - params.elite_size:
-            p1 = tournament_select(pop, fitness, params.tournament_k)
-            p2 = tournament_select(pop, fitness, params.tournament_k)
+            p1 = tournament_select_rng(pop, fitness, params.tournament_k, rng)
+            p2 = tournament_select_rng(pop, fitness, params.tournament_k, rng)
 
-            if np.random.rand() < params.crossover_rate:
-                c1, c2 = arithmetic_crossover(p1, p2)
+            if rng.random() < params.crossover_rate:
+                c1, c2 = arithmetic_crossover_rng(p1, p2, rng)
             else:
                 c1, c2 = p1.copy(), p2.copy()
 
-            c1 = gaussian_mutation(c1, low, high, params.mutation_rate, sigma)
-            c2 = gaussian_mutation(c2, low, high, params.mutation_rate, sigma)
+            c1 = gaussian_mutation_rng(c1, low, high, params.mutation_rate, sigma, rng)
+            c2 = gaussian_mutation_rng(c2, low, high, params.mutation_rate, sigma, rng)
 
             new_pop.append(c1)
             if len(new_pop) < params.population - params.elite_size:
@@ -200,7 +206,7 @@ def run_ga_on_function(name, params: GAParams, base_out):
         pop = np.vstack([elites] + new_pop)
         fitness = f(pop)
 
-        gen_best_idx = np.argmin(fitness)
+        gen_best_idx = int(np.argmin(fitness))
         gen_best = pop[gen_best_idx].copy()
         gen_best_fit = float(fitness[gen_best_idx])
 
@@ -208,26 +214,60 @@ def run_ga_on_function(name, params: GAParams, base_out):
             best_fit = gen_best_fit
             best = gen_best
             stagnation = 0
-            best_time = time.time()
         else:
             stagnation += 1
 
-        best_history.append(float(best_fit))
+        best_history.append(best_fit)
 
         if stagnation >= params.stagnation_patience:
             break
 
-    # Guardar gráficos
+    return {
+        "best_x": best.tolist(),
+        "best_f": best_fit,
+        "best_history": best_history,
+        "gens_effective": len(best_history) - 1
+    }
+
+# ==================================================
+# Ejecuta N islas EN PARALELO para una sola función
+# ==================================================
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+def run_function_with_islands(name, params: GAParams, base_out, seed_for_function):
+    """ Lanza params.islands hilos (islas), cada uno con su sub-semilla; usa el mejor. """
+    # Spawnear sub-semillas para islas (determinista)
+    ss_master = np.random.SeedSequence(seed_for_function)
+    island_seeds = ss_master.spawn(params.islands)
+
+    # Paralelizar islas
+    islands_results = []
+    start = time.time()
+    with ThreadPoolExecutor(max_workers=params.islands) as ex:
+        futures = [ex.submit(run_ga_island, name, params, island_seeds[i])
+                   for i in range(params.islands)]
+        for fut in as_completed(futures):
+            islands_results.append(fut.result())
+    elapsed = time.time() - start
+
+    # Elegir la mejor isla
+    best_idx = int(np.argmin([r["best_f"] for r in islands_results]))
+    best = islands_results[best_idx]
+
+    # Gráficas (una por función, usando el histórico del mejor)
+    f = FUNC_INFO[name]["f"]
+    low, high = FUNC_INFO[name]["bounds"]
     surf_path = os.path.join(base_out, f"{name}_surface.png")
     conv_path = os.path.join(base_out, f"{name}_convergence.png")
     plot_surface_2d(name, f, low, high, surf_path)
-    plot_convergence(name, best_history, conv_path)
+    plot_convergence(name, best["best_history"], conv_path)
 
-    result = {
+    # Armar resultado en el MISMO formato de antes
+    return {
         "function": name,
         "dims": params.dims,
         "bounds": [low, high],
-        "population": params.population,
+        "population": params.population,            # mismo campo, misma semántica
         "generations": params.generations,
         "crossover_rate": params.crossover_rate,
         "mutation_rate": params.mutation_rate,
@@ -235,10 +275,10 @@ def run_ga_on_function(name, params: GAParams, base_out):
         "tournament_k": params.tournament_k,
         "elite_size": params.elite_size,
         "stagnation_patience": params.stagnation_patience,
-        "best_x": best.tolist(),
-        "best_f": float(best_fit),
-        "evaluations": int(params.population * (len(best_history))),
-        "best_history": best_history,
+        "best_x": best["best_x"],
+        "best_f": float(best["best_f"]),
+        "evaluations": int(params.population * (len(best["best_history"]))),
+        "best_history": [float(v) for v in best["best_history"]],
         "surface_image": os.path.basename(surf_path),
         "convergence_image": os.path.basename(conv_path),
         "global_optimum": {
@@ -246,18 +286,16 @@ def run_ga_on_function(name, params: GAParams, base_out):
             "f": FUNC_INFO[name]["global_min_f"]
         },
         "latex": FUNC_INFO[name]["latex"],
+        "elapsed_seconds": round(elapsed, 3),
+        "islands_used": params.islands
     }
-    return result
+
+# ========= HTML (idéntico al original) =========
 
 def html_escape(s: str) -> str:
-    return (
-        s.replace("&", "&amp;")
-         .replace("<", "&lt;")
-         .replace(">", "&gt;")
-    )
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 def build_presentation_html(out_dir, meta, results):
-    # Tabla HTML de resultados
     rows = []
     for r in results:
         rows.append(f"""
@@ -296,7 +334,7 @@ def build_presentation_html(out_dir, meta, results):
       </ol>
     </section>
     """)
-    # Introducción
+    # Introducción (idéntica en estructura; el meta['workers'] lo mapeamos a #islas)
     sections.append(f"""
     <section>
       <h2>Introducción</h2>
@@ -410,6 +448,10 @@ def build_presentation_html(out_dir, meta, results):
     with open(os.path.join(out_dir, "presentacion.html"), "w", encoding="utf-8") as f:
         f.write(html)
 
+# ==========================
+# MAIN: funciones secuenciales,
+#       islas (hilos) por función
+# ==========================
 def main():
     base = os.path.dirname(os.path.abspath(__file__))
     out_dir = os.path.join(base, "output")
@@ -417,28 +459,27 @@ def main():
 
     params = GAParams()  # valores por defecto
     cpu_cores = os.cpu_count() or 1
-    workers = min(5, cpu_cores)  # 5 funciones -> como mucho 5 hilos
 
-    # Ejecutar en paralelo, un hilo por función
-    start = time.time()
-    futures = []
+    # Semillas por función (deterministas)
+    func_names = list(FUNC_INFO.keys())
+    ss_functions = np.random.SeedSequence(params.seed)
+    func_seeds = ss_functions.spawn(len(func_names))
+
     results = []
-    names = list(FUNC_INFO.keys())  # 5 funciones
-    from concurrent.futures import ThreadPoolExecutor, as_completed
-    with ThreadPoolExecutor(max_workers=workers) as ex:
-        for name in names:
-            futures.append(ex.submit(run_ga_on_function, name, params, out_dir))
-        for fut in as_completed(futures):
-            results.append(fut.result())
-    total_time = time.time() - start
+    start = time.time()
 
-    # Orden por nombre para consistencia
+    # Ejecutamos CADA función, lanzando N islas en paralelo dentro de cada una
+    for i, name in enumerate(func_names):
+        res = run_function_with_islands(name, params, out_dir, seed_for_function=func_seeds[i].entropy)
+        results.append(res)
+
+    total_time = time.time() - start
     results.sort(key=lambda r: r["function"])
 
-    # Guardar resultados JSON y CSV
+    # Persistir JSON y CSV (idénticos)
     with open(os.path.join(out_dir, "results.json"), "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
-    # CSV simple
+
     import csv
     with open(os.path.join(out_dir, "results.csv"), "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
@@ -450,25 +491,26 @@ def main():
                 f"{r['best_f']:.10g}", np.array2string(np.array(r["best_x"]), precision=6, separator=", ")
             ])
 
+    # Nota: para conservar la INTRO sin romper formato,
+    # usamos 'workers' = #islas (hilos) por función.
     meta = {
         "title": "Optimización Paralela con Algoritmo Genético (5 Funciones Benchmark)",
-        "subtitle": "Hilos + GA Real-Coded | Python",
+        "subtitle": "Hilos por función (Modelo de Islas) + GA Real-Coded | Python",
         "author": "Equipo / Estudiante",
         "date": time.strftime("%Y-%m-%d"),
         "cpu_cores": cpu_cores,
-        "workers": workers,
+        "workers": params.islands,              # mostrado en la intro
         "ga_params": vars(params),
         "total_seconds": round(total_time, 3)
     }
-
     with open(os.path.join(out_dir, "meta.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2, ensure_ascii=False)
 
-    build_presentation_html(base, meta, results)
+    build_presentation_html(out_dir, meta, results)
 
-    # Mensaje final en consola
+    # Consola final
     print("==== RESUMEN ====")
-    print(f"Hilos (CPU detectados): {cpu_cores} | Workers usados: {workers}")
+    print(f"Hilos (CPU detectados): {cpu_cores} | Hilos por función (islas): {params.islands}")
     print("GA params:", params)
     print(f"Tiempo total (s): {meta['total_seconds']}")
     for r in results:

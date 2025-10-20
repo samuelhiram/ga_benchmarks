@@ -1,6 +1,6 @@
 {
   "title": "Optimización Paralela con Algoritmo Genético (5 Funciones Benchmark)",
-  "subtitle": "Hilos + GA Real-Coded | Python",
+  "subtitle": "Hilos por función (Modelo de Islas) + GA Real-Coded | Python",
   "author": "Equipo / Estudiante",
   "date": "2025-10-20",
   "cpu_cores": 16,
@@ -15,7 +15,8 @@
     "mutation_sigma_ratio": 0.1,
     "tournament_k": 3,
     "elite_size": 2,
-    "stagnation_patience": 60
+    "stagnation_patience": 60,
+    "islands": 5
   },
-  "total_seconds": 4.863
+  "total_seconds": 9.733
 }
