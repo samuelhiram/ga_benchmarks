@@ -271,7 +271,7 @@ def build_presentation_html(out_dir, meta, results):
           <td>{html_escape(str(np.round(r['best_x'], 6).tolist()))}</td>
         </tr>
         """)
-    table_html = "\\n".join(rows)
+    table_html = "".join(rows)
 
     sections = []
     # Portada
