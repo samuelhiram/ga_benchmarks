@@ -1,0 +1,9 @@
+==== RESUMEN ====
+Hilos (CPU detectados): 56 | Workers usados: 5
+GA params: GAParams(seed=42, dims=2, population=80, generations=200, crossover_rate=0.9, mutation_rate=0.1, mutation_sigma_ratio=0.1, tournament_k=3, elite_size=2, stagnation_patience=60)
+Tiempo total (s): 40.648
+Ackley: best_f=3.62828e-10 dim=2 gens=102
+Griewank: best_f=0.00739781 dim=2 gens=114
+Rastrigin: best_f=6.57252e-13 dim=2 gens=93
+Rosenbrock: best_f=2.90284e-05 dim=2 gens=102
+Sphere: best_f=5.27625e-07 dim=2 gens=86

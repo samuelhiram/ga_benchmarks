@@ -1,0 +1,346 @@
+
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Optimización Paralela con Algoritmo Genético (5 Funciones Benchmark)</title>
+      <style>
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; line-height: 1.45; }
+        h1, h2, h3 { margin-top: 0.6em; }
+        section { margin-bottom: 40px; }
+        figure { margin: 0; }
+        img { border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,.1); }
+        table { border-collapse: collapse; width: 100%; }
+        th { background: #f3f4f6; }
+        td, th { text-align: left; }
+        details { margin-top: 10px; }
+        pre { background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 8px; overflow-x:auto; }
+      </style>
+    </head>
+    <body>
+      
+    <section>
+      <h1>Optimización Paralela con Algoritmo Genético (5 Funciones Benchmark)</h1>
+      <h3>Hilos + GA Real-Coded | Python</h3>
+      <p><strong>Autor:</strong> Equipo / Estudiante</p>
+      <p><strong>Fecha:</strong> 2025-10-20</p>
+    </section>
+    
+    <section>
+      <h2>Contenido</h2>
+      <ol>
+        <li>Introducción</li>
+        <li>Desarrollo</li>
+        <li>Resultados</li>
+        <li>Conclusiones</li>
+        <li>Referencias</li>
+      </ol>
+    </section>
+    
+    <section>
+      <h2>Introducción</h2>
+      <p>Se resuelven en paralelo cinco funciones benchmark de optimización continua (Sphere, Rastrigin, Rosenbrock, Ackley y Griewank) empleando un Algoritmo Genético (AG) con codificación real y evaluación en hilos. Se reportan parámetros, imágenes de las funciones (en 2D), convergencia y los mejores valores hallados.</p>
+      <p><strong>Hilos detectados en el equipo:</strong> 16 (usando 5 trabajadores).</p>
+      <pre style="white-space:pre-wrap">{
+  "seed": 42,
+  "dims": 2,
+  "population": 80,
+  "generations": 200,
+  "crossover_rate": 0.9,
+  "mutation_rate": 0.1,
+  "mutation_sigma_ratio": 0.1,
+  "tournament_k": 3,
+  "elite_size": 2,
+  "stagnation_patience": 60
+}</pre>
+    </section>
+    
+    <section>
+      <h2>Desarrollo</h2>
+      
+        <article>
+          <h3>Ackley</h3>
+          <p><strong>Función (latex):</strong> f(\mathbf{x}) = -20\exp\Big(-0.2\sqrt{\tfrac{1}{d}\sum x_i^2}\Big) - \exp\Big(\tfrac{1}{d}\sum \cos(2\pi x_i)\Big) + 20 + e</p>
+          <p><strong>Dimensiones:</strong> 2 |
+             <strong>Dominio:</strong> [-5.0, 5.0] |
+             <strong>Óptimo global:</strong> {'x': 'x* = (0,...,0)', 'f': 0.0}
+          </p>
+          <div style="display:flex;gap:24px;flex-wrap:wrap">
+            <figure>
+              <img src="./output/Ackley_surface.png" alt="surface" style="max-width:420px">
+              <figcaption>Superficie (2D)</figcaption>
+            </figure>
+            <figure>
+              <img src="./output/Ackley_convergence.png" alt="convergence" style="max-width:420px">
+              <figcaption>Convergencia (mejor f(x) por generación)</figcaption>
+            </figure>
+          </div>
+          <details>
+            <summary>Parámetros usados del AG</summary>
+            <pre style="white-space:pre-wrap">{
+  "dims": 2,
+  "bounds": [
+    -5.0,
+    5.0
+  ],
+  "population": 80,
+  "generations": 200,
+  "crossover_rate": 0.9,
+  "mutation_rate": 0.1,
+  "mutation_sigma_ratio": 0.1,
+  "tournament_k": 3,
+  "elite_size": 2,
+  "stagnation_patience": 60
+}</pre>
+          </details>
+          <p><strong>Mejor f(x):</strong> 4.01901e-13</p>
+          <p><strong>Mejor x encontrado:</strong> [0.0, 0.0]</p>
+        </article>
+        
+        <article>
+          <h3>Griewank</h3>
+          <p><strong>Función (latex):</strong> f(\mathbf{x}) = 1 + \sum\tfrac{x_i^2}{4000} - \prod \cos\Big(\tfrac{x_i}{\sqrt{i}}\Big)</p>
+          <p><strong>Dimensiones:</strong> 2 |
+             <strong>Dominio:</strong> [-6.0, 6.0] |
+             <strong>Óptimo global:</strong> {'x': 'x* = (0,...,0)', 'f': 0.0}
+          </p>
+          <div style="display:flex;gap:24px;flex-wrap:wrap">
+            <figure>
+              <img src="./output/Griewank_surface.png" alt="surface" style="max-width:420px">
+              <figcaption>Superficie (2D)</figcaption>
+            </figure>
+            <figure>
+              <img src="./output/Griewank_convergence.png" alt="convergence" style="max-width:420px">
+              <figcaption>Convergencia (mejor f(x) por generación)</figcaption>
+            </figure>
+          </div>
+          <details>
+            <summary>Parámetros usados del AG</summary>
+            <pre style="white-space:pre-wrap">{
+  "dims": 2,
+  "bounds": [
+    -6.0,
+    6.0
+  ],
+  "population": 80,
+  "generations": 200,
+  "crossover_rate": 0.9,
+  "mutation_rate": 0.1,
+  "mutation_sigma_ratio": 0.1,
+  "tournament_k": 3,
+  "elite_size": 2,
+  "stagnation_patience": 60
+}</pre>
+          </details>
+          <p><strong>Mejor f(x):</strong> 3.81029e-13</p>
+          <p><strong>Mejor x encontrado:</strong> [-1e-06, -1e-06]</p>
+        </article>
+        
+        <article>
+          <h3>Rastrigin</h3>
+          <p><strong>Función (latex):</strong> f(\mathbf{x}) = 10d + \sum_{i=1}^d \left(x_i^2 - 10\cos(2\pi x_i)\right)</p>
+          <p><strong>Dimensiones:</strong> 2 |
+             <strong>Dominio:</strong> [-5.12, 5.12] |
+             <strong>Óptimo global:</strong> {'x': 'x* = (0,...,0)', 'f': 0.0}
+          </p>
+          <div style="display:flex;gap:24px;flex-wrap:wrap">
+            <figure>
+              <img src="./output/Rastrigin_surface.png" alt="surface" style="max-width:420px">
+              <figcaption>Superficie (2D)</figcaption>
+            </figure>
+            <figure>
+              <img src="./output/Rastrigin_convergence.png" alt="convergence" style="max-width:420px">
+              <figcaption>Convergencia (mejor f(x) por generación)</figcaption>
+            </figure>
+          </div>
+          <details>
+            <summary>Parámetros usados del AG</summary>
+            <pre style="white-space:pre-wrap">{
+  "dims": 2,
+  "bounds": [
+    -5.12,
+    5.12
+  ],
+  "population": 80,
+  "generations": 200,
+  "crossover_rate": 0.9,
+  "mutation_rate": 0.1,
+  "mutation_sigma_ratio": 0.1,
+  "tournament_k": 3,
+  "elite_size": 2,
+  "stagnation_patience": 60
+}</pre>
+          </details>
+          <p><strong>Mejor f(x):</strong> 2.06057e-13</p>
+          <p><strong>Mejor x encontrado:</strong> [0.0, -0.0]</p>
+        </article>
+        
+        <article>
+          <h3>Rosenbrock</h3>
+          <p><strong>Función (latex):</strong> f(\mathbf{x}) = \sum_{i=1}^{d-1} \left[100(x_{i+1}-x_i^2)^2 + (1-x_i)^2\right]</p>
+          <p><strong>Dimensiones:</strong> 2 |
+             <strong>Dominio:</strong> [-2.0, 2.0] |
+             <strong>Óptimo global:</strong> {'x': 'x* = (1,...,1)', 'f': 0.0}
+          </p>
+          <div style="display:flex;gap:24px;flex-wrap:wrap">
+            <figure>
+              <img src="./output/Rosenbrock_surface.png" alt="surface" style="max-width:420px">
+              <figcaption>Superficie (2D)</figcaption>
+            </figure>
+            <figure>
+              <img src="./output/Rosenbrock_convergence.png" alt="convergence" style="max-width:420px">
+              <figcaption>Convergencia (mejor f(x) por generación)</figcaption>
+            </figure>
+          </div>
+          <details>
+            <summary>Parámetros usados del AG</summary>
+            <pre style="white-space:pre-wrap">{
+  "dims": 2,
+  "bounds": [
+    -2.0,
+    2.0
+  ],
+  "population": 80,
+  "generations": 200,
+  "crossover_rate": 0.9,
+  "mutation_rate": 0.1,
+  "mutation_sigma_ratio": 0.1,
+  "tournament_k": 3,
+  "elite_size": 2,
+  "stagnation_patience": 60
+}</pre>
+          </details>
+          <p><strong>Mejor f(x):</strong> 0.00235997</p>
+          <p><strong>Mejor x encontrado:</strong> [0.95142, 0.905202]</p>
+        </article>
+        
+        <article>
+          <h3>Sphere</h3>
+          <p><strong>Función (latex):</strong> f(\mathbf{x}) = \sum_{i=1}^{d} x_i^2</p>
+          <p><strong>Dimensiones:</strong> 2 |
+             <strong>Dominio:</strong> [-5.12, 5.12] |
+             <strong>Óptimo global:</strong> {'x': 'x* = (0,...,0)', 'f': 0.0}
+          </p>
+          <div style="display:flex;gap:24px;flex-wrap:wrap">
+            <figure>
+              <img src="./output/Sphere_surface.png" alt="surface" style="max-width:420px">
+              <figcaption>Superficie (2D)</figcaption>
+            </figure>
+            <figure>
+              <img src="./output/Sphere_convergence.png" alt="convergence" style="max-width:420px">
+              <figcaption>Convergencia (mejor f(x) por generación)</figcaption>
+            </figure>
+          </div>
+          <details>
+            <summary>Parámetros usados del AG</summary>
+            <pre style="white-space:pre-wrap">{
+  "dims": 2,
+  "bounds": [
+    -5.12,
+    5.12
+  ],
+  "population": 80,
+  "generations": 200,
+  "crossover_rate": 0.9,
+  "mutation_rate": 0.1,
+  "mutation_sigma_ratio": 0.1,
+  "tournament_k": 3,
+  "elite_size": 2,
+  "stagnation_patience": 60
+}</pre>
+          </details>
+          <p><strong>Mejor f(x):</strong> 7.94228e-14</p>
+          <p><strong>Mejor x encontrado:</strong> [0.0, 0.0]</p>
+        </article>
+        
+    </section>
+    
+    <section>
+      <h2>Resultados</h2>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <thead>
+          <tr>
+            <th>Función</th><th>Dim</th><th>Dominio</th><th>Población</th>
+            <th>Generaciones reales</th><th>Mejor f(x)</th><th>Mejor x</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+        <tr>
+          <td>Ackley</td>
+          <td>2</td>
+          <td>[-5.0, 5.0]</td>
+          <td>80</td>
+          <td>108</td>
+          <td>4.01901e-13</td>
+          <td>[0.0, 0.0]</td>
+        </tr>
+        \n
+        <tr>
+          <td>Griewank</td>
+          <td>2</td>
+          <td>[-6.0, 6.0]</td>
+          <td>80</td>
+          <td>108</td>
+          <td>3.81029e-13</td>
+          <td>[-1e-06, -1e-06]</td>
+        </tr>
+        \n
+        <tr>
+          <td>Rastrigin</td>
+          <td>2</td>
+          <td>[-5.12, 5.12]</td>
+          <td>80</td>
+          <td>93</td>
+          <td>2.06057e-13</td>
+          <td>[0.0, -0.0]</td>
+        </tr>
+        \n
+        <tr>
+          <td>Rosenbrock</td>
+          <td>2</td>
+          <td>[-2.0, 2.0]</td>
+          <td>80</td>
+          <td>200</td>
+          <td>0.00235997</td>
+          <td>[0.95142, 0.905202]</td>
+        </tr>
+        \n
+        <tr>
+          <td>Sphere</td>
+          <td>2</td>
+          <td>[-5.12, 5.12]</td>
+          <td>80</td>
+          <td>80</td>
+          <td>7.94228e-14</td>
+          <td>[0.0, 0.0]</td>
+        </tr>
+        
+        </tbody>
+      </table>
+    </section>
+    
+    <section>
+      <h2>Conclusiones</h2>
+      <ul>
+        <li>El AG con codificación real y cruce aritmético converge de forma estable en funciones suaves (p.ej., Sphere) y muestra comportamientos razonables en funciones altamente multimodales (Rastrigin, Ackley).</li>
+        <li>El uso de hilos permite explorar varias funciones en paralelo, reduciendo el tiempo total de ejecución en máquinas con múltiples núcleos.</li>
+        <li>Parámetros como la tasa de mutación y el tamaño de población impactan fuertemente la calidad de la solución y la velocidad de convergencia.</li>
+        <li>El elitismo pequeño (2) ayuda a preservar buenos individuos y evita pérdidas por deriva aleatoria.</li>
+      </ul>
+    </section>
+    
+    <section>
+      <h2>Referencias</h2>
+      <ol>
+        <li>De Jong, K.A. (1975). <em>Analysis of the Behavior of a Class of Genetic Adaptive Systems</em>.</li>
+        <li>Back, T. (1996). <em>Evolutionary Algorithms in Theory and Practice</em>. Oxford University Press.</li>
+        <li>Benchmark functions: Sphere, Rastrigin, Rosenbrock, Ackley, Griewank (literatura estándar de optimización y metaherísticas).</li>
+        <li>Goldberg, D.E. (1989). <em>Genetic Algorithms in Search, Optimization and Machine Learning</em>. Addison-Wesley.</li>
+      </ol>
+    </section>
+    
+    </body>
+    </html>
+    
